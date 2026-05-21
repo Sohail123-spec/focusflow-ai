@@ -241,21 +241,15 @@ input{
 
 .main-content{
 
-  flex:1;
+  margin-left:260px;
 
-  padding:42px 46px;
+  width:calc(100% - 260px);
 
-  display:flex;
+  min-height:100vh;
 
-  flex-direction:column;
+  padding:30px;
 
-  gap:42px;
-
-  width:100%;
-
-  max-width:1700px;
-
-  margin:0 auto;
+  transition:0.3s ease;
 
 }
 
@@ -3472,6 +3466,20 @@ html{
 
   box-shadow:
     0 10px 30px rgba(0,0,0,0.3);
+
+}
+
+.main-content{
+
+  margin-left:260px;
+
+  width:calc(100% - 260px);
+
+  min-height:100vh;
+
+  padding:30px;
+
+  transition:0.3s ease;
 
 }
 
