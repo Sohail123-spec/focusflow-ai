@@ -23,9 +23,11 @@ import {
 } from "../contexts/AuthContext";
 
 import {
-  saveUserData,
-  loadUserData
-} from "../utils/storage";
+  loadPlans,
+  addPlanToFirestore,
+  deletePlanFromFirestore,
+  updatePlanInFirestore
+} from "../firebase/firestore";
 
 const Planner = () => {
 
@@ -60,12 +62,14 @@ const Planner = () => {
 
   useEffect(()=>{
 
+  const fetchPlans =
+  async ()=>{
+
     if(user){
 
       const savedPlans =
-      loadUserData(
-        user.id,
-        "plans"
+      await loadPlans(
+        user.id
       );
 
       setPlans(savedPlans);
@@ -74,27 +78,12 @@ const Planner = () => {
 
     }
 
-  },[user]);
+  };
 
-  /* SAVE */
+  fetchPlans();
 
-  useEffect(()=>{
-
-    if(user && isLoaded){
-
-      saveUserData(
-        user.id,
-        "plans",
-        plans
-      );
-
-    }
-
-  },[
-    plans,
-    user,
-    isLoaded
-  ]);
+},[user]);
+ 
 
   /* TOAST */
 
@@ -112,7 +101,7 @@ const Planner = () => {
 
   /* ADD PLAN */
 
-  const addPlan = () => {
+  const addPlan = async () => {
 
     if(
       !title.trim()
@@ -140,10 +129,17 @@ const Planner = () => {
 
 };
 
-    setPlans([
-      newPlan,
-      ...plans
-    ]);
+    await addPlanToFirestore(
+  user.id,
+  newPlan
+);
+
+const updatedPlans =
+await loadPlans(
+  user.id
+);
+
+setPlans(updatedPlans);
 
     setTitle("");
 
@@ -161,46 +157,73 @@ const Planner = () => {
 
   /* COMPLETE */
 
-  const toggleComplete = (id) => {
+  const toggleComplete = async (
+  firestoreId
+) => {
 
-    const updatedPlans =
-    plans.map(plan =>
+    const currentPlan =
+plans.find(
 
-      plan.id === id
+  plan =>
 
-      ? {
-          ...plan,
-          completed: !plan.completed,
-          completedAt:
-          !plan.completed
-          ? Date.now()
-          : null
-          }
+  plan.firestoreId ===
+  firestoreId
 
-      : plan
+);
 
-    );
+await updatePlanInFirestore(
 
-    setPlans(updatedPlans);
+  user.id,
 
-  };
+  firestoreId,
+
+  {
+
+    completed:
+    !currentPlan.completed,
+
+    completedAt:
+    !currentPlan.completed
+    ? Date.now()
+    : null
+
+  }
+
+);
+
+const updatedPlans =
+await loadPlans(
+  user.id
+);
+
+setPlans(updatedPlans);
+};
 
   /* DELETE */
 
-  const deletePlan = (id) => {
+  const deletePlan = async (
+  firestoreId
+) => {
 
-    const updatedPlans =
-    plans.filter(
-      plan => plan.id !== id
-    );
+    await deletePlanFromFirestore(
 
-    setPlans(updatedPlans);
+  user.id,
 
-    showToast(
-      "Planner Deleted 🗑️"
-    );
+  firestoreId
 
-  };
+);
+
+const updatedPlans =
+await loadPlans(
+  user.id
+);
+
+setPlans(updatedPlans);
+
+showToast(
+  "Planner Deleted 🗑️"
+);
+};
 
   /* FILTERS */
 
@@ -455,7 +478,9 @@ const Planner = () => {
                       <button
                         className="complete-btn"
                         onClick={()=>
-                          toggleComplete(plan.id)
+                          toggleComplete(
+                            plan.firestoreId
+                          )
                         }
                       >
 
@@ -466,7 +491,9 @@ const Planner = () => {
                       <button
                         className="delete-btn"
                         onClick={()=>
-                          deletePlan(plan.id)
+                          deletePlan(
+                            plan.firestoreId
+                          )
                         }
                       >
 
@@ -517,7 +544,7 @@ const Planner = () => {
                 completedPlans.map(plan => (
 
                   <motion.div
-                    key={plan.id}
+                    key={plan.firestoreId}
                     className="
                     planner-card
                     completed-task

@@ -41,7 +41,7 @@ const Auth = () => {
 
   /* HANDLE AUTH */
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
 
     e.preventDefault();
 
@@ -51,7 +51,7 @@ const Auth = () => {
 
     if(isLogin){
 
-      result = login(
+      result = await login(
         email,
         password
       );
@@ -60,7 +60,7 @@ const Auth = () => {
 
     else{
 
-      result = signup(
+      result = await signup(
         username,
         email,
         password

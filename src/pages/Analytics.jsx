@@ -22,8 +22,14 @@ import {
 } from "../contexts/AuthContext";
 
 import {
-  loadUserData
-} from "../utils/storage";
+
+  loadAnalyticsTasks,
+
+  loadAnalyticsPlans,
+
+  loadAnalyticsFocusSessions
+
+} from "../firebase/firestore";
 import {
   LineChart,
   Line,
@@ -57,24 +63,24 @@ const Analytics = () => {
 
   useEffect(()=>{
 
+  const fetchAnalytics =
+  async ()=>{
+
     if(user){
 
       const savedTasks =
-      loadUserData(
-        user.id,
-        "tasks"
+      await loadAnalyticsTasks(
+        user.id
       );
 
       const savedPlans =
-      loadUserData(
-        user.id,
-        "plans"
+      await loadAnalyticsPlans(
+        user.id
       );
 
       const savedSessions =
-      loadUserData(
-        user.id,
-        "focusSessions"
+      await loadAnalyticsFocusSessions(
+        user.id
       );
 
       setTasks(savedTasks);
@@ -85,7 +91,11 @@ const Analytics = () => {
 
     }
 
-  },[user]);
+  };
+
+  fetchAnalytics();
+
+},[user]);
 
   /* ANALYTICS */
 
@@ -634,7 +644,7 @@ const focusTrendData = days.map((day) => {
         />
 
         <Tooltip
-          formatter={(value) => [`${value} mins`, "Focus Time"]}
+          formatter={(value) => [value, "Tasks Completed"]}
         />
 
         <Line

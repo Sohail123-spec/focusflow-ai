@@ -10,8 +10,14 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
-  loadUserData
-} from "../utils/storage";
+
+  loadDashboardTasks,
+
+  loadDashboardPlans,
+
+  loadDashboardFocusSessions
+
+} from "../firebase/firestore";
 import {
   useAuth
 } from "../contexts/AuthContext";
@@ -78,14 +84,25 @@ const [taskPercent, setTaskPercent] = useState(0);
 const [consistencyPercent, setConsistencyPercent] = useState(0);
 useEffect(() => {
 
-  const tasks =
-  loadUserData(user.id,"tasks");
+  if(!user) return;
+
+const fetchDashboardData =
+async ()=>{
+
+const tasks =
+await loadDashboardTasks(
+  user.id
+);
 
 const planners =
-  loadUserData(user.id,"plans");
+await loadDashboardPlans(
+  user.id
+);
 
 const focusSessions =
-  loadUserData(user.id,"focusSessions");
+await loadDashboardFocusSessions(
+  user.id
+);
 
   const completedTasks =
     tasks.filter(task => task.completed);
@@ -240,10 +257,20 @@ setProductivityGrowth(
 
 /* STREAK GROWTH */
 
+const currentStreak =
+activeDays.size;
+
 setStreakGrowth(
-  streak > 0
-    ? Math.min(streak * 5, 100)
+
+  currentStreak > 0
+
+    ? Math.min(
+        currentStreak * 5,
+        100
+      )
+
     : 0
+
 );
 const focusPercentage =
   Math.min(
@@ -349,7 +376,9 @@ setRecentActivity(
       ]
 
 );
+};
 
+fetchDashboardData();
 }, [user]);
 const productivityInsight =
   productivityScore >= 80

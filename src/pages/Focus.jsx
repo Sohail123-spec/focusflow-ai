@@ -25,9 +25,9 @@ import {
 } from "../contexts/AuthContext";
 
 import {
-  saveUserData,
-  loadUserData
-} from "../utils/storage";
+  loadFocusSessions,
+  addFocusSessionToFirestore
+} from "../firebase/firestore";
 
 const Focus = () => {
 
@@ -76,12 +76,14 @@ const Focus = () => {
 
   useEffect(()=>{
 
+  const fetchSessions =
+  async ()=>{
+
     if(user){
 
       const savedSessions =
-      loadUserData(
-        user.id,
-        "focusSessions"
+      await loadFocusSessions(
+        user.id
       );
 
       setSessions(savedSessions);
@@ -90,27 +92,13 @@ const Focus = () => {
 
     }
 
-  },[user]);
+  };
 
-  /* SAVE */
+  fetchSessions();
 
-  useEffect(()=>{
+},[user]);
 
-    if(user && isLoaded){
-
-      saveUserData(
-        user.id,
-        "focusSessions",
-        sessions
-      );
-
-    }
-
-  },[
-    sessions,
-    user,
-    isLoaded
-  ]);
+ 
 
   /* TIMER LOGIC */
 
@@ -164,7 +152,7 @@ const Focus = () => {
 
   /* COMPLETE */
 
-  const completeSession = () => {
+  const completeSession = async () => {
 
     setIsRunning(false);
 
@@ -178,25 +166,22 @@ const Focus = () => {
 
     };
 
-    const updatedSessions = [
+    await addFocusSessionToFirestore(
 
-      newSession,
+  user.id,
 
-      ...sessions
+  newSession
 
-    ];
+);
 
-    setSessions(updatedSessions);
+const updatedSessions =
+await loadFocusSessions(
+  user.id
+);
 
-    saveUserData(
+setSessions(updatedSessions);
 
-      user.id,
-
-      "focusSessions",
-
-      updatedSessions
-
-    );
+    
 
     setTimeLeft(defaultTime);
 
@@ -208,7 +193,7 @@ const Focus = () => {
 
   /* STOP SESSION */
 
-  const handleStopSession = () => {
+  const handleStopSession = async () => {
 
     const completedMinutes =
       Math.ceil(
@@ -234,25 +219,21 @@ const Focus = () => {
 
     };
 
-    const updatedSessions = [
+    await addFocusSessionToFirestore(
 
-      newSession,
+  user.id,
 
-      ...sessions
+  newSession
 
-    ];
+);
 
-    setSessions(updatedSessions);
+const updatedSessions =
+await loadFocusSessions(
+  user.id
+);
 
-    saveUserData(
+setSessions(updatedSessions);
 
-      user.id,
-
-      "focusSessions",
-
-      updatedSessions
-
-    );
 
     setIsRunning(false);
 
@@ -549,7 +530,7 @@ const Focus = () => {
                 sessions.map(session => (
 
                   <motion.div
-                    key={session.id}
+                    key={session.firestoreId}
                     className="
                     task-card
                     ui-card

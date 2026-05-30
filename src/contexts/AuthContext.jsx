@@ -5,6 +5,18 @@ import {
   useState
 } from "react";
 
+import {
+  auth
+} from "../firebase/firebase";
+
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile
+} from "firebase/auth";
+
 const AuthContext =
 createContext();
 
@@ -22,64 +34,61 @@ export const AuthProvider = ({
 
   useEffect(()=>{
 
-    const savedUser =
-    localStorage.getItem(
-      "focusflow-user"
+    const unsubscribe =
+    onAuthStateChanged(
+
+      auth,
+
+      (firebaseUser)=>{
+
+        if(firebaseUser){
+
+          setUser({
+
+            id:firebaseUser.uid,
+
+            username:
+              firebaseUser.displayName
+              || "User",
+
+            email:
+              firebaseUser.email
+
+          });
+
+        }
+
+        else{
+
+          setUser(null);
+
+        }
+
+        setLoading(false);
+
+      }
+
     );
 
-    if(savedUser){
-
-      setUser(
-        JSON.parse(savedUser)
-      );
-
-    }
-
-    setLoading(false);
+    return unsubscribe;
 
   },[]);
 
   /* LOGIN */
 
-  const login = (
+  const login = async (
     email,
     password
   ) => {
 
-    const users =
-    JSON.parse(
+    try{
 
-      localStorage.getItem(
-        "focusflow-users"
-      )
+      await signInWithEmailAndPassword(
 
-    ) || [];
+        auth,
+        email,
+        password
 
-    const matchedUser =
-    users.find(
-
-      user =>
-
-        user.email === email
-        &&
-        user.password === password
-
-    );
-
-    if(matchedUser){
-
-      localStorage.setItem(
-
-        "focusflow-user",
-
-        JSON.stringify(
-          matchedUser
-        )
-
-      );
-
-      setUser(
-        matchedUser
       );
 
       return {
@@ -88,90 +97,78 @@ export const AuthProvider = ({
 
     }
 
-    return {
-      success:false,
-      message:"Invalid credentials"
-    };
+    catch(error){
+
+      return {
+
+        success:false,
+
+        message:error.message
+
+      };
+
+    }
 
   };
 
   /* SIGNUP */
 
-  const signup = (
+  const signup = async (
+
     username,
     email,
     password
+
   ) => {
 
-    const users =
-    JSON.parse(
+    try{
 
-      localStorage.getItem(
-        "focusflow-users"
-      )
+      const result =
 
-    ) || [];
+      await createUserWithEmailAndPassword(
 
-    const userExists =
-    users.find(
-      user =>
-      user.email === email
-    );
+        auth,
+        email,
+        password
 
-    if(userExists){
+      );
+
+      await updateProfile(
+
+        result.user,
+
+        {
+          displayName:
+          username
+        }
+
+      );
 
       return {
-        success:false,
-        message:"User already exists"
+        success:true
       };
 
     }
 
-    const newUser = {
+    catch(error){
 
-      id:Date.now(),
+      return {
 
-      username,
-      email,
-      password
+        success:false,
 
-    };
+        message:error.message
 
-    users.push(newUser);
+      };
 
-    localStorage.setItem(
-
-      "focusflow-users",
-
-      JSON.stringify(users)
-
-    );
-
-    localStorage.setItem(
-
-      "focusflow-user",
-
-      JSON.stringify(newUser)
-
-    );
-
-    setUser(newUser);
-
-    return {
-      success:true
-    };
+    }
 
   };
 
   /* LOGOUT */
 
-  const logout = () => {
+  const logout = async () => {
 
-    localStorage.removeItem(
-      "focusflow-user"
-    );
-
-    setUser(null);
+    await signOut(auth);
 
   };
 

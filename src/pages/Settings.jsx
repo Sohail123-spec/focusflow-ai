@@ -26,9 +26,9 @@ import {
 } from "../contexts/AuthContext";
 
 import {
-  saveUserData,
-  loadUserData
-} from "../utils/storage";
+  loadSettings,
+  saveSettings
+} from "../firebase/firestore";
 
 const Settings = ({
 
@@ -62,12 +62,14 @@ const Settings = ({
 
   useEffect(()=>{
 
+  const fetchSettings =
+  async ()=>{
+
     if(user){
 
       const savedSettings =
-      loadUserData(
-        user.id,
-        "settings"
+      await loadSettings(
+        user.id
       );
 
       if(savedSettings){
@@ -96,7 +98,11 @@ const Settings = ({
 
     }
 
-  },[user]);
+  };
+
+  fetchSettings();
+
+},[user]);
 
   /* SAVE SETTINGS */
 
@@ -104,23 +110,21 @@ const Settings = ({
 
     if(user && isLoaded){
 
-      saveUserData(
+      saveSettings(
 
-        user.id,
+  user.id,
 
-        "settings",
+  {
 
-        {
+    displayName,
 
-          displayName,
+    focusDuration,
 
-          focusDuration,
+    dailyGoal
 
-          dailyGoal
+  }
 
-        }
-
-      );
+);
 
     }
 

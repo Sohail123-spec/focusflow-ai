@@ -24,9 +24,11 @@ import {
 } from "../contexts/AuthContext";
 
 import {
-  saveUserData,
-  loadUserData
-} from "../utils/storage";
+  loadTasks,
+  addTaskToFirestore,
+  deleteTaskFromFirestore,
+  updateTaskInFirestore
+} from "../firebase/firestore";
 
 const Tasks = () => {
 
@@ -53,45 +55,35 @@ const Tasks = () => {
 
   useEffect(()=>{
 
-  if(user){
+  const fetchTasks =
+  async ()=>{
 
-    const savedTasks =
-    loadUserData(
-      user.id,
-      "tasks"
-    );
+    if(user){
 
-    setTasks(savedTasks);
+      const savedTasks =
+      await loadTasks(
+        user.id
+      );
 
-    setIsLoaded(true);
+      setTasks(savedTasks);
 
-  }
+      setIsLoaded(true);
+
+    }
+
+  };
+
+  fetchTasks();
 
 },[user]);
 
   /* SAVE TASKS */
 
-  useEffect(()=>{
-
-  if(user && isLoaded){
-
-    saveUserData(
-      user.id,
-      "tasks",
-      tasks
-    );
-
-  }
-
-},[
-  tasks,
-  user,
-  isLoaded
-]);
+  
 
   /* ADD TASK */
 
-  const addTask = () => {
+  const addTask = async () => {
 
     if(!taskInput.trim()) return;
 
@@ -109,10 +101,17 @@ const Tasks = () => {
 
 }
 
-    setTasks([
-      newTask,
-      ...tasks
-    ]);
+    await addTaskToFirestore(
+  user.id,
+  newTask
+);
+
+const updatedTasks =
+await loadTasks(
+  user.id
+);
+
+setTasks(updatedTasks);
 
     setTaskInput("");
 
@@ -124,47 +123,72 @@ const Tasks = () => {
 
   /* COMPLETE TASK */
 
-  const toggleTask = (id) => {
+  const toggleTask = async (
+  firestoreId
+) => {
 
-    const updatedTasks =
-    tasks.map(task =>
+    const currentTask =
+tasks.find(
 
-      task.id === id
+  task =>
 
-      ? {
-          ...task,
-          completed: !task.completed,
-          completedAt:
-          !task.completed
-          ? Date.now()
-          : null
-        }
+  task.firestoreId ===
+  firestoreId
 
-      : task
+);
 
-    );
+await updateTaskInFirestore(
 
-    setTasks(updatedTasks);
+  user.id,
 
-  };
+  firestoreId,
 
+  {
+
+    completed:
+    !currentTask.completed,
+
+    completedAt:
+    !currentTask.completed
+    ? Date.now()
+    : null
+
+  }
+
+);
+
+const updatedTasks =
+await loadTasks(
+  user.id
+);
+
+setTasks(updatedTasks);
+};
   /* DELETE TASK */
 
-  const deleteTask = (id) => {
+  const deleteTask = async (
+  firestoreId
+) => {
 
-    const updatedTasks =
-    tasks.filter(
-      task => task.id !== id
-    );
+    await deleteTaskFromFirestore(
 
-    setTasks(updatedTasks);
+  user.id,
 
-    showToast(
-      "Task Deleted 🗑️"
-    );
+  firestoreId
 
-  };
+);
 
+const updatedTasks =
+await loadTasks(
+  user.id
+);
+
+setTasks(updatedTasks);
+
+showToast(
+  "Task Deleted 🗑️"
+);
+};
   /* TOAST */
 
   const showToast = (message) => {
@@ -333,7 +357,7 @@ const Tasks = () => {
                   .map(task => (
 
                     <div
-                      key={task.id}
+                      key={task.firestoreId}
                       className="search-item"
                     >
 
@@ -381,7 +405,7 @@ const Tasks = () => {
                 activeTasks.map(task => (
 
                   <motion.div
-                    key={task.id}
+                    key={task.firestoreId}
                     className="task-card ui-card"
                     initial={{
                       opacity:0,
@@ -416,7 +440,9 @@ const Tasks = () => {
                       <button
                         className="complete-btn"
                         onClick={()=>
-                          toggleTask(task.id)
+                          toggleTask(
+                            task.firestoreId
+                          )
                         }
                       >
 
@@ -427,7 +453,9 @@ const Tasks = () => {
                       <button
                         className="delete-btn"
                         onClick={()=>
-                          deleteTask(task.id)
+                          deleteTask(
+                            task.firestoreId
+                          )
                         }
                       >
 
@@ -478,7 +506,7 @@ const Tasks = () => {
                 completedTasks.map(task => (
 
                   <motion.div
-                    key={task.id}
+                    key={task.firestoreId}
                     className="
                     task-card
                     completed-task
@@ -513,7 +541,7 @@ const Tasks = () => {
                     <button
                       className="delete-btn"
                       onClick={()=>
-                        deleteTask(task.id)
+                        deleteTask(task.firestoreId)
                       }
                     >
 
